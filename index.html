@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - ThreeJS</title>
+  <link rel="stylesheet" href="./style.css">
+
+  <link href='//fonts.googleapis.com/css?family=Signika+Negative:300,400,600' rel='stylesheet' type='text/css'>
+  <meta name="viewport" content="user-scalable=no, width=device-width" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+  <link rel='stylesheet' href='https://codepen.io/GreenSock/pen/ZEGdQLM/7ba936b34824fefdccfe2c6d9f0b740b.css'>
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/locomotive-scroll@3.5.4/dist/locomotive-scroll.css'>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+
+<body>
+
+  <div class="smooth-scroll">
+
+    <div class="description panel blue">
+      <div>
+        <div class="display">
+          <div style="">
+            <div id="stats"></div>
+            <canvas id="canvas-window" width="400" height="200"></canvas>
+          </div>
+          <div>
+            <h1>
+              Canvas on worker
+            </h1>
+            <canvas id="canvas2" width="400" height="200"></canvas>
+          </div>
+          </div>
+        <div class="scroll-down">Scroll down<div class="arrow"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <section class="panel orange">
+  
+        <span class="line line-2"></span>
+
+        <canvas id="view-canvas"></canvas>
+    </section>
+
+
+    <section class="panel gray">
+      DONE!
+    </section>
+  </div>
+
+  <div id="vertexShader">
+    attribute vec3 dog_pos;
+    attribute vec3 brain_pos;
+    attribute vec3 bud_pos;
+    uniform float u_time;
+    uniform vec3 uMouse;
+    uniform float uScroll;  // Scroll value from 0 to 1
+    varying vec3 v_pos;
+    varying vec3 v_normal;
+    
+    float getRandomDelay(float index) {
+      float seed = index;           // Use a unique seed for each instance
+      float delayAmount = 0.5;      // Adjust this to control the delay amount
+    
+      // Use a pseudo-random function based on the instance's seed
+      float randomValue = fract(sin(seed) * 43758.5453);
+      return randomValue * delayAmount ;
+    }
+    
+    void main() {
+      float scaleObjDog = 7.2;
+      float scaleObjBrain = 0.22;
+      float scaleObjBud = 0.52;
+      float index = float(gl_InstanceID);  // Convert gl_InstanceID to float
+      float delay = getRandomDelay(index);
+      float normalizedScroll = smoothstep(delay, 1.0, uScroll); // Apply delay to scroll value
+    
+      vec3 dog_posNew = vec3(dog_pos.x - 0.1, dog_pos.y, dog_pos.z) * scaleObjDog;
+      vec3 brain_posNew = vec3(brain_pos.x, brain_pos.y, brain_pos.z) * scaleObjBrain;
+      vec3 bud_posNew = vec3(bud_pos.x, bud_pos.y - 7.0, bud_pos.z) * scaleObjBud;
+    
+      // Define the spiral variables
+      float spiralRadius = 0.5;   // Adjust this to control the radius of the spiral
+    
+      float angle = normalizedScroll * 2.0 * 3.14159  ;
+      float spiralOffset = spiralRadius * angle;
+    
+      vec3 interpolatedPos;
+      interpolatedPos = mix(dog_posNew, bud_posNew, normalizedScroll );
+    
+      interpolatedPos.x += spiralOffset * cos(angle );
+      interpolatedPos.y += spiralOffset * sin(angle) ;
+      interpolatedPos.z += spiralOffset / float(5.0);
+    
+      vec3 position = position + interpolatedPos;
+    
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }</div>
+    <div id="fragmentShader">
+      uniform vec3 u_light;
+      uniform sampler2D uTexture;
+      varying vec3 v_pos;
+      varying vec3 v_normal;
+     
+      void main() {
+          vec3 color = vec3(0.8);
+  
+          vec3 fromLight = v_pos - u_light;
+          float d = 1.0 - (dot(v_normal, normalize(fromLight)) + 1.0) * 0.5; // 0 ~ 1
+          color *= smoothstep(0.5, 0.8, d);
+          vec4 final;
+          if(v_pos.z < 2.6) {
+            final = vec4(vec3(0.1,0.0,1.0), 0.5);
+          }else{
+            final = texture2D(uTexture, vec2(v_pos.x,v_pos.y));
+          }
+    
+          gl_FragColor = vec4(1.0,0.3,0.5,1.0);
+      }
+    </div>
+
+  <script src='./lib/gsap.min.js'></script>
+  <script src='./lib/ScrollTrigger.min.js'></script>
+  <script src='./lib/locomotive-scroll.min.js'></script>
+
+  <script src="./gsap.js"></script>
+
+
+
+  <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.137.5/build/three.module.js"
+        }
+    }
+</script>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r119/three.js'></script>
+  <script type="module" src="./script.js"></script>
+
+ <!--  <script type="script/worker" id="workerCode">
+
+    self.onmessage = function(e) {
+      switch (e.data.msg) {
+        case 'start':
+          console.log('checkcheck:worker')
+          break;
+      }
+    };
+  </script> -->
+ 
+</body>
+
+</html>
